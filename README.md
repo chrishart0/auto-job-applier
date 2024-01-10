@@ -7,21 +7,24 @@ Relevant learning materials
 First, prepare the OpenAPI key. 
 
 
-Create these key files in the `backend` directory filled in with values from the appropriate services: 
-* `openai_api_key.txt`
-    * <https://platform.openai.com/api-keys>
-* `search_api_key.txt`
-    * <https://www.searchapi.io/>
-* `serp_api_key.txt`
-    * <https://serpapi.com/>
-* `langchain_key.txt`
-    * <https://smith.langchain.com/>
- This file is added in the .gitignore so it will not be committed if you clone this repo.
+Copy the `.env.example` file and rename the new file `.env`
 
+This example uses OpenAI, search API, and LangChain. Follow the below links to get the proper values to fill our your key file
+* OpenAI
+    * <https://platform.openai.com/api-keys>
+* SERP
+    * <https://www.searchapi.io/>
+    * This is used for making a google searche tool to be used by the AI agent
+
+* We use LangChain's LangSmith for observability. You can also disable this if you like by setting the value for `LANGCHAIN_TRACING_V2` to false
+    * <https://smith.langchain.com/>
+
+
+ This file is added in the `.gitignore` so it will not be committed
 
 
 ### 2) Statup the API
-There are two ways to run the backend. if you'd like to run FastAPI without docker then follow these steps. 
+
 
 Install prereqs
 ```
