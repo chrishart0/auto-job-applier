@@ -1,7 +1,6 @@
 from langchain import hub
 from langchain.tools import Tool
 from langchain.agents import AgentExecutor, create_openai_tools_agent, tool
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI
 
 
@@ -10,8 +9,6 @@ import requests
 # Import all keys from keys.env file as environment variables
 from dotenv import load_dotenv
 load_dotenv()
-
-
 
 
 def search_google_jobs( query, num_results=10):
