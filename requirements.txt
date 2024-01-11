@@ -12,3 +12,4 @@ pypdf
 
 # Qualirt of life tooling
 python-dotenv
+rich

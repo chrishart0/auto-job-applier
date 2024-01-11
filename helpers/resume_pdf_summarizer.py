@@ -73,6 +73,13 @@ Here is the resume:
 """
 
 def summarize_resume(resume_text):
+    """Summarizes a resume and returns a list of potential job titles"""
+    # If the resume is already summarized, return the existing file
+    if os.path.exists(f"resume/resume_summary.md"):
+        print("Resume summary already exists, returning existing file")
+        with open(f"resume/resume_summary.md", "r") as f:
+            return f.read()
+
     prompt = ChatPromptTemplate.from_template(resume_summarizer_prompt)
     model = ChatOpenAI(model="gpt-4")
     output_parser = StrOutputParser()
@@ -80,11 +87,18 @@ def summarize_resume(resume_text):
     chain = prompt | model | output_parser
 
     response = chain.invoke({"resume_text": resume_text})
+
+    # Save the summary to a file
+    with open(f"resume/resume_summary.md", "w") as f:
+        f.write(response)
+
     return response
 
 
-resume_text =  pdf_to_text("resumes/Resume.pdf")
-print(resume_text)
-print("\n\n")
 
-print(summarize_resume(resume_text))
+@tool
+def resume_pdf_summarizer_Tool(query: str) -> int:
+    """Takes a search query and search for jobs"""
+    resume_text =  pdf_to_text("resumes/Resume.pdf")
+    jobs = summarize_resume(resume_text)
+    return jobs
