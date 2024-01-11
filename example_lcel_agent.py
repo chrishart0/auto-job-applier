@@ -6,12 +6,12 @@
 import requests
 import os
 
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain.tools import Tool
 from langchain.agents import create_openai_functions_agent, tool
 from langchain.agents import AgentExecutor
+from langchain_core.messages import AIMessage, HumanMessage
 
 ##################
 ### Setup keys ###
@@ -118,9 +118,13 @@ agent = create_openai_functions_agent(llm, tools, prompt)
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-
-def send_message(message):
-    response = agent_executor.invoke({"input": message})
+def send_message(message, chat_history):
+    response = agent_executor.invoke(
+        {
+            "input": message,
+            "chat_history": chat_history,
+        }
+    )
 
     # Log tool usage just tool names
     if len(tool_usage) > 0:
@@ -138,13 +142,17 @@ def send_message(message):
 
 # Now add a simple chat interface
 def run_chat():
+    chat_history = [ ]
+
     while True:
         user_input = input("You: ")
         if user_input.lower() == 'exit':
             print("Exiting chat...")
             break
-        print("Bot:", send_message(user_input))
-
+        response = send_message(user_input, chat_history)
+        chat_history.append(HumanMessage(content=user_input))
+        chat_history.append(AIMessage(content=response))
+        print("Bot:", response)
 
 # Execute the chat interface
 run_chat()
