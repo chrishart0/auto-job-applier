@@ -23,7 +23,7 @@ This example uses OpenAI, search API, and LangChain. Follow the below links to g
  This file is added in the `.gitignore` so it will not be committed
 
 
-### 2) Statup the API
+### 2) Start up the chat
 
 
 Install prereqs
@@ -38,7 +38,6 @@ Run the python script which starts the API, as shown below.
 python app.py
 ```
 
-Startup te API with SAM to mock API Gateway and lambda locally
 
 
 
