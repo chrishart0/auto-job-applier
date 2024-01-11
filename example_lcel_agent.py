@@ -3,8 +3,8 @@
 # Video Overview: https://www.youtube.com/watch?v=08qXj9w-CG4
 # Agent Concepts: https://python.langchain.com/docs/modules/agents/concepts
 
-
 import requests
+import os
 
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI
@@ -25,7 +25,6 @@ load_dotenv()
 ##################
 
 
-
 ##### Create Agent #####
 
 # An Agent is an LLM + Tools + Memory + the ability to think and execute tools until a goal is reached.
@@ -34,10 +33,12 @@ load_dotenv()
 # Take a look at this, different agent types are better at different things, especially import if you are wanting to use a model other than OpenAI
 
 
-# Get the prompt to use - you can modify this!
-prompt = hub.pull("hwchase17/openai-functions-agent")
+###########################
+### Configure all tools ###
+###########################
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+# Track tool usage
+tool_usage = []
 
 ### Tools Setup ###
 def search_google_jobs( query, num_results=10):
@@ -50,38 +51,51 @@ def search_google_jobs( query, num_results=10):
         "gl": "us", # Country code
         #   "location": "Remote",
         "ltype": "1", # Work remote
-        # "api_key": get_search_api_key(),
+        "api_key": os.getenv("SEARCHAPI_API_KEY"),
         "num": num_results # Number of results to return
     }
 
-    response = requests.get(url, params = params)
+    try:
+        response = requests.get(url, params = params)
 
-    # Get just the Job titles and urls for each job
-    jobs = []
-    for job in response.json()['jobs']:
-        jobs.append({
-            'title': job['title'],
-            'url': job['apply_link'],
-            'company': job['company_name']
-        })
+        # Get just the Job titles and urls for each job
+        jobs = []
+        for job in response.json()['jobs']:
+            jobs.append({
+                'title': job['title'],
+                'url': job['apply_link'],
+                'company': job['company_name']
+            })
 
-    #Print jobs to console in a nice format
-    for job in jobs:
-        print(f"""
-            Title: {job['title']}
-            Company: {job['company']}
-            Job: {job['url']}"""
+        #Print jobs to console in a nice format
+        # for job in jobs:
+        #     print(f"""
+        #         Title: {job['title']}
+        #         Company: {job['company']}
+        #         Job: {job['url']}"""
+        #     )
+
+        # Capture tool usage with unique key
+        tool_usage.append(
+            {
+                "tool": "search_google_jobs",
+                "query": query,
+                "num_results": num_results,
+                "results": jobs
+            }
         )
 
-    return jobs
+        return jobs
+    except Exception as e:
+        print(f"Error in jobs call: {e}")
+        return f"Error in jobs call, please tell the user about this: {e}"
 
-### Configure all tools for agent ###
 @tool
 def search_google_jobs_Tool(query: str) -> int:
     """Takes a search query and search for jobs"""
     return search_google_jobs(query)
 
-# ### Configure all tools for agent ###
+### Configure all tools for agent ###
 
 tools = [
     Tool(
@@ -91,4 +105,46 @@ tools = [
     )
 ]
 
+#######################
+### Setup the Agent ###
+#######################
 
+# Get the prompt to use - you can modify this!
+prompt = hub.pull("hwchase17/openai-functions-agent")
+
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+agent = create_openai_functions_agent(llm, tools, prompt)
+
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+
+def send_message(message):
+    response = agent_executor.invoke({"input": message})
+
+    # Log tool usage just tool names
+    if len(tool_usage) > 0:
+        print("------")
+        print("Tool Usage:")
+        for tool in tool_usage:
+            print("     - ", tool.get("tool"))
+            
+    return response.get("output")
+
+
+#######################################
+### Setup Chat interface in console ###
+#######################################
+
+# Now add a simple chat interface
+def run_chat():
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == 'exit':
+            print("Exiting chat...")
+            break
+        print("Bot:", send_message(user_input))
+
+
+# Execute the chat interface
+run_chat()
