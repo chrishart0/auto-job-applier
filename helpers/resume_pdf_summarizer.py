@@ -7,6 +7,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
+import os
+
 ##################
 ### Setup keys ###
 ##################
@@ -28,6 +30,11 @@ Here is the resume:
 
 def pdf_to_text(path):
     """Converts a PDF to markdown maintaining the formatting"""
+    # Check if converted file already exists at "{path}.md"
+    if os.path.exists(f"{path}.md"):
+        print("Converted PDF already exists, returning existing file")
+        with open(f"{path}.md", "r") as f:
+            return f.read()
 
     # Convert the PDF to text
     loader = PyPDFLoader(path)
@@ -45,13 +52,20 @@ def pdf_to_text(path):
     chain = prompt | model | output_parser
 
     response = chain.invoke({"resume_text": pages})
+
+    # Save the fixed resume to a file
+    with open(f"{path}.md", "w") as f:
+        f.write(response)
+
     return response
 
 resume_summarizer_prompt = """
-Read the following resume and give me a sentence or two about the types of jobs the candidate is qualified for.
+You are an expert in the field of job searching, the number one recruiter at a large recruiting firm. 
+You have been asked to make a list of the types of jobs this person is qualified for.
 Be specific about the level of job, such as junior designer, sr full stack engineer, etc
-Give a bulleted list of potential job titles which can be looked for with a justifiable reason for each.
-Respond in markdown
+If information is missing or minimal, leave it out of the list.
+Give a markdown bulleted list of potential job titles which can be looked for with a justifiable reason for each.
+Only return the list of jobs and nothing else. 
 -----------------
 Here is the resume:
  
@@ -69,7 +83,7 @@ def summarize_resume(resume_text):
     return response
 
 
-resume_text =  pdf_to_text("resumes/Gil-Hope-Resume-1.pdf")
+resume_text =  pdf_to_text("resumes/Resume.pdf")
 print(resume_text)
 print("\n\n")
 
